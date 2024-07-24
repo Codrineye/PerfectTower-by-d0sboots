@@ -1,3 +1,4 @@
+:import crates_trader_lib
 ; Alternates between idle mode and trading crates.
 ;
 ; To use this, the air stone must be active, and you must be in
@@ -5,7 +6,7 @@
 ;
 ; Turbo Exec v2.2 is *required*!
 
-:name D0S.Crates:Idler_v2
+:name {package(Idler_v2)}
 
 isopen("towertesting") || isopen("tradingpost")
 
@@ -18,31 +19,27 @@ key.o()
 :local int repeat
 :local int loops
 
-; Macro our status variable for readability.
-#trading "<size=20><color=white>trading"
-#exiting "Exiting</color></size>"
-#running "Press o to stop</color></size>"
-
 ; All layouts have two modes: "Widescreen" and "tallscreen". The dividing
 ; line between them is 16:9 aspect ratio.
-#wide_or_tall(wide, tall) if(width.d() * 0.5625 > height.d(), {wide}, {tall})
 
 ; The ternary is for memory relief, see below.
-#click_launch click(\
-  if(repeat % 2 == 0 || repeat % 5000 == 4999,\
-    vec(-1., -1.),\
-    vec(ui.size(), ui.size()) * {wide_or_tall(\
-      vec(height.d() * 0.208, height.d() * 0.07),\
-      vec(width.d() * 0.117, width.d() * 0.039)\
-    )}\
-  )\
-)
+#click_launch click(if(\
+  repeat % 2 == 0 || repeat % 5000 == 4999, \
+  vec(-1.0, -1.0), \
+  {pos.relative(93.0 / 800.0, 29.0 / 450.0, 0.0, 0.0)}\
+))
 
 ; This variable is tunable, to reach the maximum crates/sec.
 loops = 325
+
 ; This creates the toggle functionality.
-gss({trading}, if(turbo.cycles.max == 0, "<color=red>Need turbo exec v2.2!</color></color></size>", if(gsg({trading}) == "", {running}, {exiting})))
-goto(if(gsg({trading}) != {running}, end, repeat_loop))
+global.string.set({trading}, if(\
+  turbo.cycles.max == 0, \
+  {no_turbo}, \
+  if(contains({trading_state}, {end_of_message}), {exiting}, {running})\
+))
+
+goto(if(contains({trading_state}, {running}), repeat_loop, end))
 
 ; This loop runs two frames:
 ; The first starts in the Tower Testing screen in idle mode, leaves to go
@@ -71,6 +68,7 @@ turbo.cycles.max = max(turbo.cycles.max, 10000)
 ; looping constructs. We spend most of our time in this loop (even with
 ; turbo, and accounting for the fact that we spend an entire frame elsewhere),
 ; so it pays to keep it efficient.
+
 loop:
 refresh()
 trade(0, 0.1)
@@ -80,6 +78,7 @@ refresh()
 trade(0, 0.1)
 refresh()
 trade(0, 0.1)
+
 i = (i + 1) % loops
 gotoif(loop, i > 0)
 
@@ -131,8 +130,10 @@ gotoif(loop, i > 0)
 
 repeat_loop:
 turbo.register = turbo.register + 1 - (repeat % 2) * 2
+
 show(if(repeat % 2 == 0, "towertesting", "tradingpost"), false)
 show(if(repeat % 2 == 0, "tradingpost", "towertesting"), true)
+
 {click_launch}
 repeat = repeat + 1
 
@@ -141,10 +142,11 @@ repeat = repeat + 1
 ; *does* happen outside of turbo; if there is another script running with
 ; turbo on, it will mess up the timing here. (It would be a bad idea anyway,
 ; because it would be hogging CPU and slowing down your trades.)
+
 wait:
-goto(if(repeat % 2 == 0,\
-  if(turbo.state != "idle", wait, repeat_loop),\
-  if(gsg({trading}) == {running}, main_loop, exit)\
+goto(if(repeat % 2 == 0, \
+  if(contains(turbo.state, "idle"), repeat_loop, wait), \
+  if(contains({trading_state}, {running}), main_loop, exit)\
 ))
 
 exit:

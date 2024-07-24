@@ -41,7 +41,7 @@ All this does is use the first active skill, constantly, as long as you are in t
 lZFNb5tAEIb/i6++wBIqb6UcAIeFBCOg5rPqYWc3MtBdjIwBQ9T/XmG3UizlkOxpdt7RzDvPvK06dqrac7f6/nO1VcIxnvQ9TdURSLKnSHRguIZhGIQj+1RkybhNeQlp3INMNCaxCjI0l4IndMvTzI9B44KJSDAtakEye9G3kguQyUTTXV8grAAS0iL+AI2v5KmuGHK3lEU5wmdG7Ilm/gCVPnPneekRFegy5NLuvMZXmBR9MelNkYVujnDPtKiEJnyy6stMs1YEe2PNlO5OM2oFv59nWseNp/ntq4zXwZIneAoyfqRZJALhn2h66dhkTjzVe5rqTWDhGtBlYPXDR17mr3h5qceBIfGt2D9scoQ70FzMUdlyEq9jdG6BXGbXeVZB6svuGw/981dy5cq20s+AIhVI3PPMFzTVZ07snhtlDeh/7Jqf4n74kPtv0JIKSBxygrUic3tKkhKc6OhJtXy9mxOaweH9/9rv9ky7AYKrPB2X3aeFo9f44t5n+BI41zvg3Vaff4x3mhNY+Mbx8Pi4+vXnLw==
 ```
 
-It's not hard to make this yourself, but it's a bit tricky to get the conditions right so you don't get extra copies when clicking "restart," so here's a canonical example.\
+It's not hard to make this yourself, but it's a bit tricky to get the conditions right so you don't get extra copies when clicking "restart," so here's a canonical example.<br>
 It's straightforward to edit this to change or add more abilities if you need to.
 
 ## Factory automation
@@ -55,16 +55,15 @@ This set of scripts manages auto-crafting of everything in the factory. It is an
 ```
 **This requires `turbo exec v2.2` to function, found here: https://github.com/d0sboots/TPT2_scripts/blob/main/common/turbo_exec/README.md**
 
-┌─────────────────────────────────────────────────┐\
-│ The list of all valid items can be found in the source code of [factory_constants](factory/factory_constants.tpt2). │\
+┌─────────────────────────────────────────────────┐<br>
+│ The list of all valid items can be found in the source code of [factory_constants](factory/DOS.Factory/factory_constants.tpt2). │<br>
 └─────────────────────────────────────────────────┘
 
 ### Details
 
 To use this, import and enable all the scripts in both this package and `turbo exec`. (You can right-click a package to quick-toggle-enable the whole package.) Then go to the factory and use WASD to select a quantity, tier, category, and item.
 
-The available categories are Producers (PROD), Machines (MACH),
-Misc Crafted (CRFT), Produced Parts (PART), and Item Groups (GRUP).
+The available categories are Producers (PROD), Machines (MACH), Misc Crafted (CRFT), Produced Parts (PART), and Item Groups (GRUP).
 
 Press "F" to craft when you're ready.
 
@@ -123,7 +122,7 @@ This script is very similar to my other autominer: It mines all layers across al
 rVXRbpswFP2XfAExsTQm7cFAYFBCC22w8bSHGFchqU3RCFAy7d8n06qKQ7Z2U3lBNva5955z7uXnrCl+7OpDM/v8beY+JP16gGtOwh0z5jWT2YC2CCFEzRwfBCcoZKYt2A4eNhgKlCCE7NBgJm+jitdMph0fYF0Aq6d4EeTAagszLVmVLG1f4a1vFNoScKGwN3jVUlKK3MwMSmLI5Eq748xTb7VbDNdVbOQkNFzJGwbCkjmwZlXSFiAzHD/umPqOoWHbtjHmPsD9PY4bSlYtw97CBqLlDjzkZHtNwVOXS6+J5LhXUZJoMZdf03khwy6SMczBkyiG53s5CWvulwdK0jofxvhvYrnnWH25ZwAeue+1HCX2lba+atwEIRc/dTl4xTyeYzpm/MjMrKGe1TBg9af1P2uFYuZb+xz37QZDI6piwZEW1+W+t3OlN2xI+shwZigd1NmLe3o+kxqRmZb5Vsdn2HrQ8+pVXvq92+Z07YxeQuXoq6hSmPOGgfhVa3quNVLvYEVB1lISKk0qZqadHnf7zAcWLb2FLSW8yYkQxfYljkxrqmkQjAS+XXPY8f6PGPYHYDgfgOG+H0PnetJXKB6YWVzsgQt7uv8kn/ivkJap4y9/6Lotp34B845qOMF4yJUnswRYBgNCOmYqCgnLonp48XXcMWKXhRRHBhbv9PXI7WneTnBn6J4dHy2n0UDT+OPsaze+d7zzPUhJeNTrLdS1iPvZwKQ33N++cAusQ+Grnow7tnsft6q3z7j99EYvOva0jutxTldpx8Gi5UC01LfMSPGn5r/e78uxv9K4ohiKQop9JLMFxfGc+9nxHsO9nk+9Tu+CdrWvj9y3+ov6Tb1wc8bFjgGr+R9d/zY/bRSUN8l0HpydkWH5T/+8L7Pvv34D
 ```
 
-Although this script is useful on its own, a large part of why I wrote it was to be an example for how to use turbo exec v2. It is relatively straightforward for a mining script, and all the speed comes from turbo. You can see the source, with liberal comments, at [D0S.TurboMiner](D0S.TurboMiner).
+Although this script is useful on its own, a large part of why I wrote it was to be an example for how to use turbo exec v2. It is relatively straightforward for a mining script, and all the speed comes from turbo. You can see the source, with liberal comments, at [D0S.TurboMiner](mine/D0S.TurboMiner.tpt2).
 
 ## Museum combiner v4
 **v4.7**
@@ -152,15 +151,14 @@ The budget is (roughly) how much will get spent to upgrade every stone in the
 grid; it's not what will get used every time. A good rule of thumb is to set
 this to the amount of Museum resources you have, or maybe a little more.
 
-Press "M" to start the combiner. (If you don't like these keys, see [the
-modification instructions](/museum/README.md) for how you can change them.)
+Press "M" to start the combiner. (If you don't like these keys, see [the modification instructions](museum/README.md) for how you can change them.)
 
 **Once you understand how the combiner works, switch to the "Artifacts" tab
 while it is running for best speed.** It runs ~11x faster without graphics
 (i.e. when you aren't looking at it) then when you are. You still need to be
 in the museum for it to work at all, though.
 
-![The combiner running](/museum_combiner.png)
+![The combiner running](museum//museum_combiner.png)
 
 ### Features
 
@@ -245,7 +243,7 @@ If *nothing shows up* when you press P (and the AI overlay is on), you may not h
 It should take a second or two to draw the whole map. Much longer than that indicates an issue with turbo exec.
 
 ## Adventure AI
-This is an updated version of leon.adventure AI.\
+This is an updated version of leon.adventure AI.<br>
 You can find the AI [here](https://github.com/d0sboots/TPTAdventure#arcade-adventure-full-auto-script)
 
 ## Timed Task Looping
@@ -277,7 +275,7 @@ is running so that it doesn't get screwed up.
 
 Turbo exec v2 is not required, but it will speed up trashing greatly.
 
-The [download and instructions](auto_trasher/README.md) are on a separate page, because there are a couple of different options
+The [download and instructions](factory/auto_trasher/README.md) are on a separate page, because there are a couple of different options
 depending on if you want to customize it.
 
 ## Dust Up-tierer
@@ -293,7 +291,7 @@ Edit the first line which sets the variable "ore_buffer". The default of 1000 me
 
 You can edit the second line which sets the variable "dust_multipliers" to customize the ratios; this sets the shape of the target distribution as a space-separated list. Each number is a multiple of the T1 dust amount, so the first entry should be 1. The default of "1 1 .625 .5 .07872 .06312 .01 .01 .0021 .0021" is based on making high-level producers and should reasonable for everyone.
 
-![The script in action](/crushing_in_progress.png)
+![The script in action](factory/DOS.Factory/crushing_in_progress.png)
 This shows what you can expect after the script has run for a while. There's only 2.75K of the low-tier dusts, but 138 of the higest-tier dusts. This matches the ratios from a previous version (138 is 1/20th of 2750.) When you first start it, you might have millions of T1 dust - don't be alarmed if it drops this to just a few thousand.
 
 You also might notice that when you first get a new tier (say, the first time you get T10 dust), your dust levels will drop suddenly. This is expected: the script cuts off the tiers you don't have (since you can't uptier to them yet), and once you gain access to a new tier the rebalancing will give you a bunch more dust of the new, higest tier, but ~1/4 as much dust in the other tiers.
@@ -323,7 +321,7 @@ https://github.com/cl1694/My-TPT2-scripts/blob/main/Miscellaneous/ClickTrainer%2
 
 ### Example
 Here's the result after pressing "p" four times in various resolutions, always pressing on the labeled corner of the workshop resource icon on the upgrade button.
-![Using the script in the workshop](https://raw.githubusercontent.com/d0sboots/PerfectTower/main/click_trainer_result.png)
+![Using the script in the workshop](click_trainer_result.png)
 
 For the X component, the coefficients came out to 0.5 (exactly) and 0.0249. All numbers are rounded to 4 decimal places, but that's more accuracy than you typically need
 (or can achieve with the mouse). In this case, the offset of 0.0249 can be dropped; omitting it yields a spot slightly to the left on the button, which is fine.
@@ -341,7 +339,7 @@ The final equation for a button click should look like this:
 click(if(height.d()/width.d() >= 0.5625, vec(_tallscreen_coords_), vec(_widescreen_coords_)))
 ```
 ## AI Benchmarker
-A script/execution suite for timing how long various things take to run. Using this is a bit more involved, so it's moved to its own subpage here: [benchmarker](benchmarker).
+A script/execution suite for timing how long various things take to run. Using this is a bit more involved, so it's moved to its own subpage here: [benchmarker](benchmarker/README.md).
 
 ## Auto Era Disabler
 SPOLERS BELOW FOR ERA PHASE! YOU HAVE BEEN WARNED!
@@ -388,7 +386,7 @@ This requires the Air Stone to be active, and remember to put all your Town Perk
 `D0S.Crates:Idler_v2 1 1 22`
 `D0S.Crates:Benchmark 1 1 12`
 ```
-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
+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
 ```
 
 Also included is a benchmarking utility, useful for tuning the loop constant for your machine (for maximum performance). If you don't care, you can safely delete/disable it with no ill effect. Pressing "b" will run the crate trader for 15 seconds, and display the *exact* amount of time it ran, to let you calculate precise crates/sec. Obviously, you have to record crates before/after to make this work.

@@ -1,9 +1,10 @@
+:import crates_trader_lib
 ; Script for benchmarking the efficiency of D0S.Idler_Crates.
 ; Use this for tuning the loop constant.
 ;
 ; Use Full Precision for maximum resolution in benchmarking.
 
-:name D0S.Crates:Benchmark
+:name {package(Benchmark)}
 
 isopen("tradingpost")
 
@@ -13,8 +14,6 @@ key.b()
 :local double end_time
 :global int turbo.register
 
-#trading "<size=20><color=white>trading"
-#exiting "Exiting</color></size>"
 #benchmark "<size=20><color=white>benchmark"
 #remaining (end_time - next_time)
 
@@ -22,20 +21,30 @@ key.b()
 
 show("tradingpost", false)
 show("towertesting", true)
-execute("D0S.Crates:Idler_v2")
+execute("{package(Idler_v2)}")
 next_time = now()
 end_time = next_time + {seconds(15)}
 
 loop:
 waituntil(now() > next_time)
-gss({benchmark}, "0:" . d2s(floor({remaining}/{seconds(10)})) .\
-  d2s(floor({remaining}/{seconds(1)}) % 10.) . "</color></size>")
-next_time += {seconds(1)}
-goto(if(gsg({trading}) == "", end, if(next_time <= end_time, loop, cleanup)))
+global.string.set(\
+  {benchmark}, \
+  "0:" . d2s(floor({remaining} / {seconds(10)})) . d2s(\
+    floor({remaining} / {seconds(1)}) % 10.0\
+  ) . "</color></size>"\
+)
+
+next_time = next_time + {seconds(1)}
+
+goto(if(\
+  {trading_state} == "", \
+  end, \
+  if(next_time <= end_time, loop, cleanup)\
+))
 
 cleanup:
-gss({trading}, {exiting})
-waituntil(gsg({trading}) == "")
+global.string.set({trading}, {exiting})
+waitwhile(contains({trading_state}, {exiting}))
 
 end:
-gss({benchmark}, "final: " . d2s((now() - end_time + {seconds(15)}) / {seconds(1)}) . "</color></size>")
+global.string.set({benchmark}, "final: " . d2s((now() - end_time + {seconds(15)}) / {seconds(1)}) . "</color></size>")

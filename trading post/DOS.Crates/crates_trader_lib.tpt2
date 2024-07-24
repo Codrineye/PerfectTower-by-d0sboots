@@ -1,0 +1,10 @@
+#package(name) DOS.Crates:{name}
+
+#trading "<size=20><color=white>trading"
+#trading_state global.string.get({trading})
+
+#end_of_message "</color></size>"
+
+#exiting "Exiting" . {end_of_message}
+#running "Press o to stop" . {end_of_message}
+#no_turbo "<color=red>Need turbo exec v2.2!</color>" . {end_of_message}
