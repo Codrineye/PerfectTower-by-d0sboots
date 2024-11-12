@@ -47,4 +47,8 @@ global.string.set({trading}, {exiting})
 waitwhile(contains({trading_state}, {exiting}))
 
 end:
-global.string.set({benchmark}, "final: " . d2s((now() - end_time + {seconds(15)}) / {seconds(1)}) . "</color></size>")
+global.string.set(\
+  {benchmark}, \
+  "final: " . d2s((now() - end_time + {seconds(15)}) / {seconds(1)}) .\
+  {end_of_message}\
+)
