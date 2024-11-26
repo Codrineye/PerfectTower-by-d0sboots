@@ -1,0 +1,73 @@
+#version 5.0
+#package(name) D0S.Museum v{version}:{name}
+
+; key assignments
+#up w
+#down s
+#start m
+
+#identifier "D0S.Museum"
+
+; Root variable declaration macros
+; These can either be used explicitly in the script
+; for low level variable manipulation or for streamlined
+; utility variable definitions
+#var.internal(name) {identifier} . {name}
+#var.display(name) "<size=0>" . {var.internal("</size>" . {name})}
+
+; Generalized .get .set values
+; var. will always be used for global variables
+; as local calls will either be pre-defined or explicit
+#var.get(type, name) global.{type}.get({name})
+#var.set(type, name, value) global.{type}.set({name}, {value})
+
+; Start of the variable hider, a double value for the budget
+#budget "<size=0>" . {var.internal("museum budget")}
+#budget.get {var.get(double, {budget})}
+#budget.set(value) {var.set(double, {budget, {value}})}
+
+#color(name, color) "</size>" . {name} . "<color={color}>"
+#color.error {color("error=", #FB3)}
+#color.museum {color("museum=", #2F4)}
+
+
+; lua macro to store the elements more easily
+; 
+
+{lua(\
+  elements = {};\
+  max_length = 0;\
+  function add_element(name)\
+    elements[1 + #elements] = name;\
+    max_length = math.max(max_length, #name);\
+  end\
+  function elements_x_char(characters)\
+    local shrunk = {};\
+    for i = 1, #elements do\
+      local elem = elements[i];\
+      elem = elem .. string.rep(" ", max_length - #elem);\
+      shrunk[1 + #shrunk] = string.sub(elem, 0, characters);\
+    end\
+    return table.concat(shrunk);\
+  end\
+)}
+
+; This way, we can both define them in full
+#add_element(name) {lua(add_element({name}))}
+{add_element("light")}
+{add_element("electricity")}
+{add_element("fire")}
+{add_element("darkness")}
+{add_element("nature")}
+{add_element("air")}
+{add_element("water")}
+{add_element("earth")}
+{add_element("universal")}
+
+; and get the data string we need, without too much headache
+:const string elements "{lua(return elements_x_char(1))}"
+
+; 
+; guide for size
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; 
