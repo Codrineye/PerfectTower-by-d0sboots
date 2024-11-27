@@ -236,15 +236,14 @@ executesync(if(\
 ; Otherwise, continue the loop:
 ; Either normally, or via a shortcut if this part of the grid is empty,
 ; to avoid executing the sub-scripts.
-goto(if(\
-  isopen("museum"), \
+gotoif(\
   if(\
-    museum_pos < 130 && contains(museum_status, "Combining"), \
+    museum_pos < 130 && {is_combining}, \
     if(tier("loadout", museum_pos) == -1, skip, upgrade_loop), \
     top\
   ), \
-  end\
-))
+  isopen("museum")\
+)
 
 end:
 ; Before we exit, blank the status so that

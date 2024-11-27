@@ -155,7 +155,8 @@ turbo.cycles.max = max(turbo.cycles.max, turbo.cycles + 15)
 
 ; executesync() is used here to pause us until our child Combine stops us.
 ; If we jump from the top, we have to be prepared
-; to loop back to this instruction. in that case, this needs to be a no-op.
+; to loop back to this instruction. in that case,
+; this needs to be a no-op.
 executesync(if(\
   contains("key.{start}", impulse()),\
   "%%museum-nop%%",\

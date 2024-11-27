@@ -6,12 +6,24 @@
 #down s
 #start m
 
+; Utility macros
+; for qol improvements during implementation
+
+#contains(string) contains(impulse(), {string})
+#contains.key(key) {contains("key.{key}")}
+#contains.script(script) {contains("{package({script})}")}
+
+; Macro-substitution for the museum timer,
+; allows mocking it out easily for testing.
+#timer museum.timer()
+
+; Script identifier for global variables
 #identifier "D0S.Museum"
 
 ; Root variable declaration macros
 ; These can either be used explicitly in the script
-; for low level variable manipulation or for streamlined
-; utility variable definitions
+; for low level variable manipulation
+; or for streamlined utility variable definitions
 #var.internal(name) {identifier} . {name}
 #var.display(name) "<size=0>" . {var.internal("</size>" . {name})}
 
@@ -21,14 +33,58 @@
 #var.get(type, name) global.{type}.get({name})
 #var.set(type, name, value) global.{type}.set({name}, {value})
 
-; Start of the variable hider, a double value for the budget
-#budget "<size=0>" . {var.internal("museum budget")}
-#budget.get {var.get(double, {budget})}
-#budget.set(value) {var.set(double, {budget, {value}})}
+; a signal manager, used on initialization to determine the
+; purpose of each copy script and to direct them where needed
+; also starts a variable hider
+#signal "<size=0>" . {var.internal("signal manager")}
+#signal.get {var.get(int, {signal})}
+#signal.set(value) {var.set(int, {signal}, {value})}
 
-#color(name, color) "</size>" . {name} . "<color={color}>"
-#color.error {color("error=", #FB3)}
-#color.museum {color("museum=", #2F4)}
+; a double value for the budget
+#budget {var.internal("museum budget")}
+#budget.get {var.get(double, {budget})}
+#budget.set(value) {var.set(double, {budget}, {value})}
+
+; an integer that reprezents what tier we're looking at
+#tier {var.internal("museum tier")}
+#tier.get {var.get(int, {tier})}
+#tier.set(value) {var.set(int, {tier}, {value})}
+
+; the position we're at in the combiner
+#pos {var.internal("museum position")}
+#pos.get {var.get(int, {pos})}
+#pos.set(value) {var.set(int, {pos}, {value})}
+
+; An int value that holds what value we're aiming for
+#target {var.internal("target tier")}
+#target.get {var.get(int, {target})}
+#target.set(value) {var.set(int, {target}, {value})}
+
+; A data string that holds each value in the offshore market
+#offer {var.internal("offer tiers")}
+#offer.get {var.get(string, {offer})}
+#offer.set(value) {var.set(string, {offer}, {value})}
+
+; status of the script,
+; also closes the hiding block
+#status {var.internal("museum status")}
+#status.get {var.get(string, {status})}
+#status.set(value) {var.set(string, {status}, "</size>" . {value})}
+
+#color(hex, string) <color={hex}>{string}</color>
+
+#error.color(text) "error={color(#FB3,{text})}"
+#museum.color(text) "museum={color(#2F4,{text})}"
+
+#color.error "error=<color=#FB3>"
+#color.museum "museum=<color=#2F4>"
+#color.budget "</color> {color(#FFF, budget)}</br>"
+
+#status.keys {color(#2F4,{up})}/{color(#2F4,{down})} changes
+#status.start(action) {color(#2F4,{start})} {action}
+
+#status.combining Combining... [" . {pos.get} . "[ {status.start(stop)}
+#status.info(action) {status.keys} {status.start({action})}
 
 
 ; lua macro to store the elements more easily
@@ -65,7 +121,62 @@
 {add_element("universal")}
 
 ; and get the data string we need, without too much headache
-:const string elements "{lua(return elements_x_char(1))}"
+:const string elements "{lua(return elements_x_char(2))}"
+
+
+; Turn an element string into an index.
+; For our purpose, all the indexes need to be multiplied by two,
+; so we look for the index of the first two characters of the element.
+; 
+; The "offset" string allows us to concatenate on a string
+; and thus add a constant to the result.
+#element.index_base(element, offset) index(\
+  {offset} . elements, \
+  sub({element}, 0, 2), \
+  0\
+)
+
+; Turn an element string into an index.
+; The base version is defined in museum_macros.
+#element.index(offset) {element.index_base(\
+  museum.slotElement(offer_idx), \
+  "{lua(return string.rep(" ", {offset}))}"\
+)}
+
+; Macro for determining the number of tiers we can boost,
+; given our budget and stones of "in_tier".
+; 
+; We allocate 1% of budget to each stone.
+; Based on the tier of the stones we can buy,
+; they cost 2000 * 18^in_tier / 18 each.
+; (We ignore the extra cost of universal stones.)
+; This determines how many stones we can buy, and thus, the max tier.
+; 
+; There is an extra division by 9 and a floor.
+; This means that if the level can't be raised by at least 2 levels,
+; the quantity in the log will be rounded down to 0,
+; and thus the log will result in -infinity.
+; 
+; We add back the 2 levels on the outside.
+#up_tiers(in_tier) floor(\
+  {budget.get} / 1e5 / (18.0 ^ ({in_tier}))\
+) // 3.0 + 2.0
+
+
+; The top tier that can be achieved, given input stones of "in_tier".
+; Capped either at +11 levels, or by the budget function of up_tiers.
+; If we can't reach +2 levels, up_tiers returns -inf,
+; which will result in -1.0 from this function.
+#top_tier(in_tier) max(-1.0, min(\
+  50.0, \
+  min(11.0, {up_tiers({in_tier})}) + ({in_tier})\
+))
+
+
+
+:const string impulse.{up} ''
+:const string impulse.{down} ''
+:const string impulse.{start} ''
 
 ; 
 ; guide for size

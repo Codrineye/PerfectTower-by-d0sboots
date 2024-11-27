@@ -1,0 +1,20 @@
+; Script is initiated inside of Main
+; Main enters Buy for variable declarations and waits for completion
+; Buy doesn't execute anybody, so we go back to main
+; 
+; Main executes "Calculate" and waits for museum_tier == -2
+; Calculate
+; It sets museum_tier to 0
+; sets offer_tiers to what we get have in the offshore market
+; sets museum tier to -1
+; executes Combine
+; Combine
+; makes 3 copies of itself
+; executes buy to buy the stones
+; 
+; Combine kills buy if it bought tiers of stones >= than the target tier
+; refreshes turbo and goes to a goto
+; it loops if the target tier > than the tier we have in slot 1 and if
+; our 27th stone is the same as our museum tier, otherwise we're done
+; and can signal to main to kill the scripts
+; 
