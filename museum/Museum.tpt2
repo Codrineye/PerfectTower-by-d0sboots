@@ -3,15 +3,9 @@
 
 :budget_cap -1
 
-; This isn't included in this subdirectory,
-; it comes from the factory source.
-:import worker_storage_lib
-
 wakeup()
 open.museum()
 
-key.{up}()
-key.{down}()
 key.{start}()
 
 ; The "main" script of the combiner.
@@ -30,27 +24,49 @@ key.{start}()
 ; that doesn't get stop()'ed at some point.
 
 :local string local_elem
+:local string offer_tiers
 
 :local int local_buy_amount
 :local int offer_idx
+:local int local_signal
+:local int exec_budget
 
-:local double worker_val
 :local double end_time
+:local double budget
 
 :local bool buyer
 :local bool combiner
 
+; Signal starts as 0 on startup
+; 
+; a negative signal means we're moving internally
+; a positive signal means we're determening the
+; status
+; 
+local_signal = {signal.get}
+buyer = local_signal == {signal.buy}
+combiner = local_signal == {signal.combine}
 
-
-; We start the hiding block no matter what
-{signal.set(0)}
+goto(if(\
+  isopen("museum"),\
+  if(\
+    combiner || buyer, \
+    if(buyer, buy, combine), \
+    top\
+  ), \
+  99\
+))
 
 top:
+; We start the hiding block no matter what
+; signal 0 means default runtime
+{signal.set(0)}
+
 ; Enter the contents of the script "Buy"
 ; to initialize the global variables in the proper order.
 ; We re-do this after every run, to reset museum_pos.
 
-script.buy:
+goto.table.case_1:
 
 ; This chunk is responsible for buying all stones.
 ; 
@@ -60,80 +76,28 @@ script.buy:
 ; This also reads/writes the budget from worker storage,
 ; and increment/decrements it if the right keys are pressed.
 ; 
-; If we're being called from Combine, we're a buyer.
-; Otherwise, if we're being invoked due to key-impulse,
-; but the combiner is currently running, abort.
+; We can be called as a buyer or we're being invoked due to key-impulse,
+; if we're combining, we abort the operation.
 ; We don't want to change the budget in the middle of things.
 
-goto(if({contains.script(Combine)}, buy, if(\
-  contains("key.{up}key.{down}", impulse()) &&\
-  contains({status.get}, "Combining"), \
-  end,\
-  init\
-)))
-
 init:
-
-; Use worker_storage_lib to find a worker_slot
-; to use for permanent storage.
-#prefix [museum]
-:local int worker_slot
-{worker_lib_line_1({prefix})}
-{worker_lib_line_2}
-
-; Fetch the budget from the chosen worker.
-; The s2d fallback handles the case where
-; we're allocating new storage, as well.
-worker_val = s2d(\
-  sub(worker.name(worker_slot), {len({prefix})}, 99), \
-  1e11\
-)
-
-; If we're incrementing or decrementing the budget,
-; round it to a fixed amount.
-; This allows users to set it to a specific amount
-; by modifying the worker if they wish,
-; but we'll always get clean set-points when changing via the UI.
-; The lower bound is 1e5, since at that point you can't buy any stones
-; (according to our budget).
-; Also, set budget to -1 if there are no worker slots available.
-; This is our signal to Main,
-; so that it can display an appropriate error message.
-{budget.set(if(worker_slot == 200, -1.0, if(\
-  {contains.key()}, \
-  (10.0 ^ 0.5) ^ max(10.0, min(560.0, if(\
-    {contains.key({up})}, \
-    1.0, \
-    -1.0\
-    ) + round(worker_val // (10.0 ^ 0.5))\
-  )), \
-  worker_val\
-)))}
-
-; Save the budget back.
-; There's always enough room for the full value.
-worker.setName(\
-  worker_slot - if(worker_slot < 100, 0, 100),\
-  "{prefix}" . {budget.get}\
-)
-
 ; Set other variables that need to happen
 ; before we close the script block.
 ; 
 ; If target_tier is -2, we're being invoked because start was pressed:
 ; Either during the timer countdown, or to abort a running combine.
 ; Either way, museum_tier needs to be set to 0 to signal no countdown.
-;
+; 
 ; Otherwise, we leave it unchanged,
 ; This will usually mean the countdown remains in effect.
-{tier.set(if({target.get} == -2, 0, {tier.get}))}
+{tier.set(if(local_signal == -2, 0, {tier.get}))}
 {pos.set(-1)}
 
 ; Signal Main to wake up.
 ; We only want to override target_tier if it's idle,
 ; i.e. set to 0 - other situations show that it's in use,
 ; and notifying about changing budget is the lowest priority.
-{target.set(if({target.get} == 0, -3, {target.get}))}
+{signal.set(if(local_signal == 0, -3, local_signal))}
 
 ; Time for more ugly math!
 ; 
@@ -166,21 +130,20 @@ worker.setName(\
 ; pref = log_18(budget / k) - log_18(18 ^ 0.5),
 ; pref = log_18(budget / k / 18 ^ 0.5),
 ; pref = log_18(budget / (2e5 / 18) / 18 ^ 0.5),
-; budget / 2e5 / 18 = (budget * 18) / 2e5
-; pref = log_18((budget * 18) / (2e5 * 18 ^ 0.5))
+; L = budget / 2e5 / 18 = (budget * 18) / 2e5
+; pref = log_18(L / 18 ^ 0.5)
+; pref = log_18(budget * 18 / (2e5 * 18 ^ 0.5))
 ; 18 / 18 ^ 0.5 = 18 ^ (1 - 0.5) = 18 ^ 0.5
 ; pref = log_18(budget * 18 ^ 0.5 / (2e5))
-;
+; 
 
 ; The result ends up being intuitive
 ; As the range of stones spans 11 tiers,
 ; and our uptiers is also +11 tiers,
 ; we want to match the preferred tier to the point where
 ; we can just barely afford to buy the stone.
-museum.setPreferredTier(max(1, min(\
-  50, \
-  d2i(({budget.get} * 18.0 ^ 0.5 / 2e5) // 18.0)\
-)))
+budget = {budget} * 18.0 ^ 0.5 / 2e5
+museum.setPreferredTier(max(1, min(50, d2i(budget // 18.0))))
 
 buy:
 ; If we're only upgrading 5 or fewer levels,
@@ -189,19 +152,17 @@ buy:
 ; This actually maxes out on speed at +7 levels,
 ; because at that point we are buying 6 each cycle,
 ; which matches the amount the combines use.
-local_buy_amount = max(1, 3 * ({target.get} - {tier.get} - 5))
+local_buy_amount = max(1, 3 * ({signal.get} - {tier.get} - 5))
 
 ; If we're a buyer, use the stone in inventory.
 ; Otherwise, buy nothing until we can exit normally.
-local_elem = if(\
-  {contains.script(Combine)},\
-  element("inventory", 0),\
-  ""\
-)
+local_elem = if(buyer, element("inventory", 0), "")
+exec_budget = if(buyer, budget(), 0)
 
-end.buy:
+buy_loop:
 museum.buyTier(local_elem, {tier.get}, local_buy_amount)
-gotoif(end.buy, budget() > 100)
+exec_budget = exec_budget - 100;
+goto(if(exec_budget >= 100, buy_loop, if(buyer, 99, script.main)))
 
 ; Main
 script.main:
@@ -210,7 +171,7 @@ script.main:
 ; These are initialized to what can be bought from the store.
 ; This logically belongs in "Buy",
 ; but is moved out of there to make space.
-{offer.set("0101010101010101-1")}
+offer_tiers = "0101010101010101-1"
 
 ; No-offshore-market fix:
 ; If we get here with museum_tier == -2
@@ -226,30 +187,16 @@ script.main:
 ; turbo from other scripts without bad effects.
 ; It keeps the status line up-to-date while the museum is not running.
 
+goto.table.case_5:
+
 status_loop:
-; We use target_tier to receive signals from other scripts.
-; 0 means nothing is hapenning, so we always reset to 0 at the top.
-{target.set(0)}
-
-; This is a useful sub-expression when displaying
-; numbers in rounded scientific notation.
-; We want to extract the exponent, but for numbers like .9996,
-; we know they'll round up to 1.00 (when rounded to 3 places),
-; so we have to consider them as one exponent higher.
-; 
-; The parameter is to allow for the injection of a constant
-; for constant folding in later expressions.
-#adjust_exp(x) floor({budget.get} // 10.0 - (0.9995 // 10.0 + {x}))
-
 ; Stringify the budget in rounded-scientific notation,
 ; rounded to 3 digits (2 after the decimal place).
 ; This is an awkwardly large expression, but it's really the best
 ; we can do with the tools we have.
 ; The "2" passed to adjusted_exp subtracts 2 from the exponent,
 ; so the overall effect is to multiply by 100 (before rounding).
-#budget.rounded round({budget.get} / 10.0 ^ {adjust_exp(2.0)}) \
-  / 100.0 . "e" . {adjust_exp(0.0)}
-
+; 
 ; Normally we would take the ceiling of the time remaining,
 ; because that's how timers work.
 ; As you show 1 second left until the time hits 0.
@@ -260,32 +207,23 @@ status_loop:
 #time_floor(div) floor({timer} / {div})
 
 ; Set the status. There's a lot of cases to this:
-; * Error for no workers available.
-;   - We don't have direct visibilty to worker_slot,
-;     but Buy will signal the error by setting budget to negative,
-;     which will never happen otherwise.
-; * Error for a bad Turbo install. This is disturbingly frequent.
-; * Show our current budget,
-;   with green highlighting to prompt that this can be adjusted.
 ; * Show a brief help line, also with green highlighting
 ;   to link the keys to the budget.
 ; * If we've pressed {start}, show the Combining message instead.
 ;   This is important because certain things key off of it.
 ;   target_tier = -2 is the signal for this.
-;
+; 
 ; We don't bother doing anything special when the museum isn't open,
 ; since we'll handle that at the bottom of the script.
-{status.set(if(\
-  {budget.get} < 0.0, \
-  {error.color(No available workers!)}, \
-  {color.museum} . {budget.rounded} . {color.budget} . \
-  "<color=#0DF{status.keys} {status.start()}>" . if(\
+
+{status.set({color.museum} . {color.budget} . \
+  "<color=#0DF> {status.start()}" . if(\
     {tier.get} == -2, \
     "begins</color>", \
     "stops</color><br><color=#FFF>Waiting " . {time_floor(60.0)} . ":" .\
     sub(d2s({time_floor(1.0)} % 60.0 + 100.0), 1, 2)\
   )\
-))}
+)}
 
 ; The s2i() / sub() expression is a jump-table,
 ; where the string values are line numbers.
@@ -293,7 +231,7 @@ status_loop:
 ; it hasn't been set to anything since it was cleared
 ; at the top of status_loop), -2 (set when key.{start} is pressed),
 ; and -3 (set when budget is adjusted via key.{up}/key.{down}).
-;
+; 
 ; -2 finishes the loop.
 ; -3 should reset target_tier and update status
 ; by jumping two lines back.
@@ -302,7 +240,7 @@ status_loop:
 ; have to update status, so we jump one back, to set status.
 ; We can't merge the -3 and 0 cases, because setting target_tier
 ; over-frequently makes keystrokes flaky.
-;
+; 
 ; We use a modified jump table when museum_tier is -2,
 ; which indicates that we are synced to the refresh timer.
 ; In that case, we abort when the timer is 59:59
@@ -311,13 +249,18 @@ status_loop:
 ; we jump back to executing Buy, which will reset museum_tier
 ; (and also do other things, which we don't care about) in that case.
 
+; x + x1 = 18
+; x + x2 = 22
+; x + x4 = 23
+; x + x2 = 45
+
 goto(if(\
   isopen("museum"), \
   if(\
     {tier.get} == -2 && {timer} >= 59.0 * 60.0 + 59.0,\
     start_museum, \
     s2i(\
-      sub(if({tier.get} == -2, "41 5", "47 5"), {target.get} + 3, 1), \
+      sub(if({tier.get} == -2, "41=5", "47=5"), {signal.get} + 3, 1), \
       99\
     )\
   ), \
@@ -335,6 +278,8 @@ upgrade_loop:
 ; set the status correctly within the frame that it starts.
 
 ; Calculate
+
+goto.table.case_7:
 
 script.calculate:
 
@@ -356,9 +301,9 @@ script.calculate:
 ; but between the fact that we need museum_tier reset
 ; on the first instruction, and some of the other conditions involved,
 ; it wouldn't be less complicated to do it as two instructions.
-{var.set(int, if({contains.key({start})}, {target}, {tier}), if(\
+{var.set(int, if({contains.key({start})}, {signal}, {tier}), if(\
   {contains.key({start})}, \
-  if(isopen("museum"), -2, {target.get}), \
+  if(isopen("museum"), -2, {signal.get}), \
   0\
 ))}
 
@@ -369,7 +314,7 @@ script.calculate:
 ; This would be easier to do at the top, but there's no room in Main.
 
 goto(if({contains.key({start})}, skip, if(\
-  contains({offer.get}, "0101010101010101-1"),\
+  contains(offer_tiers, "0101010101010101-1"),\
   get_offers, \
   skip_offers\
 )))
@@ -383,17 +328,17 @@ get_offers:
 ; and we're assessing whether that offer will be an improvement.
 ; The base logic relies on the top_tier formula.
 
-{offer.set(if(\
+offer_tiers = if(\
   museum.slotElement(offer_idx) == "" || \
     {top_tier(i2d(museum.slotTier(offer_idx)))} <= \
-    {top_tier(s2d(sub({offer.get}, {element.index(0)}, 2), -1.0))}, \
-  {offer.get}, \
-  sub({offer.get}, 0, {element.index(0)}) . sub(\
+    {top_tier(s2d(sub(offer_tiers, {element.index(0)}, 2), -1.0))}, \
+  offer_tiers, \
+  sub(offer_tiers, 0, {element.index(0)}) . sub(\
     i2s(100 + museum.slotTier(offer_idx)),\
     1, \
     2\
-  ) . sub({offer.get}, {element.index(2)}, 99)\
-))}
+  ) . sub(offer_tiers, {element.index(2)}, 99)\
+)
 
 ; There are max 10 offer slots, numbered 0 through 9.
 ; We'll exit after #9.
@@ -406,7 +351,7 @@ clear("inventory")
 ; Load the pre-calculated tier of stone we are buying.
 {tier.set(s2i(\
   sub(\
-    {offer.get}, \
+    offer_tiers, \
     {element.index_base(element("loadout", {pos.get}), "")}, \
     2\
   ), \
@@ -417,7 +362,7 @@ clear("inventory")
 ; In the best case, we can upgrade 11 levels
 ; past the tier of the stones we can buy from the museum.
 ; (Which may only be tier 1.)
-{target.set(if(\
+{signal.set(if(\
   min(tier("loadout", {pos.get}), {tier.get}) < 0, \
   -1, \
   d2i({top_tier(i2d({tier.get}))})\
@@ -452,11 +397,8 @@ script.combine:
 ; Otherwise, check to see if we've already reached our goal.
 ; If we have, we can exit early,
 ; otherwise fall through to the main logic.
-goto(if(\
-  {contains.script(Combine)},\
-  combine,\
-  if(tier("inventory", 0) >= {tier.get}, done, restart_loop)\
-))
+
+gotoif(done, tier("inventory", 0) >= {tier.get})
 
 ; Keep restarting the buy and combine scripts
 ; whenever the turbo frame ends.
@@ -474,14 +416,11 @@ restart_loop:
 ; whereas there are significantly more for 4.
 ; Combine is one of the most time-expensive operations in the loop,
 ; so we don't want to run it pointlessly.
-execute("{package(Combine)}")
-execute("{package(Combine)}")
-execute("{package(Combine)}")
 
 ; Start the buyer.
 ; By running this after the combiners, we'll always end each cycle
 ; with a full inventory, which is important for the check below.
-execute("{package(Buy)}")
+
 
 ; Calculate a time to end the loop at.
 ; This is 1/5 of a second in the future, so it should reliably be 5 FPS.
@@ -492,7 +431,7 @@ end_time = now() + 1e7 / 5.0
 ; because it is draining CPU time away
 ; from the important combine/buy tasks every cycle.
 ; (So is the turbo exec machinery, but we can't help that.)
-waituntil(tier("inventory", 0) >= {target.get} || now() > end_time)
+waituntil(tier("inventory", 0) >= {signal.get} || now() > end_time)
 
 ; Do another loop if we're not done yet.
 ; Abort if the 3rd-to-last power stone is not the tier we expect it to be.
@@ -530,12 +469,8 @@ waituntil(tier("inventory", 0) >= {target.get} || now() > end_time)
 ; it shouldn't take more than 1000 cycles,
 ; so this condition won't be a problem.
 
-goto(if(\
-  tier("inventory", 0) < {target.get} && \
-  tier("inventory", 27) == {tier.get}, \
-  restart_loop, \
-  done\
-))
+gotoif(restart_loop, tier("inventory", 0) < {signal.get} && \
+  tier("inventory", 27) == {tier.get})
 
 done:
 
@@ -546,11 +481,12 @@ done:
 ; Even though this happens after signalling,
 ; we get one extra cycle as a "delay slot" before we're stopped by Main.
 museum.moveTo("inventory", 0, "loadout", {pos.get})
+exec_budget = if(combiner, budget(), 0)
 
 combine:
 combine(50)
-; We need a loop condition to signal when we're done combining
-gotoif(combine, not(true))
+exec_budget = exec_budget - 100
+goto(if(exec_budget >= 100, combine, 99))
 
 ; End Combine
 
@@ -564,8 +500,9 @@ skip:
 ;
 ; The condition for displaying Combining is reversed, since it's usual
 ; here, and if {start} is pressed it means we should exit.
-{status.set({color.museum} . {budget.rounded} . {color.budget} . if(\
-  {target.get} != -2,\
+
+{status.set({color.museum} . if(\
+  {signal.get} != -2,\
   "{color(#FF0,{status.combining})}",\
   "{color(#0DF,{status.info(start)})}"\
 ))}

@@ -17,6 +17,10 @@
 ; allows mocking it out easily for testing.
 #timer museum.timer()
 
+; Macro-substitution for the museum budget
+; allows mocking it out easily for testing
+#budget resource("museum.resources")
+
 ; Script identifier for global variables
 #identifier "D0S.Museum"
 
@@ -40,10 +44,8 @@
 #signal.get {var.get(int, {signal})}
 #signal.set(value) {var.set(int, {signal}, {value})}
 
-; a double value for the budget
-#budget {var.internal("museum budget")}
-#budget.get {var.get(double, {budget})}
-#budget.set(value) {var.set(double, {budget}, {value})}
+#signal.buy -1
+#signal.combine -7
 
 ; an integer that reprezents what tier we're looking at
 #tier {var.internal("museum tier")}
@@ -54,16 +56,6 @@
 #pos {var.internal("museum position")}
 #pos.get {var.get(int, {pos})}
 #pos.set(value) {var.set(int, {pos}, {value})}
-
-; An int value that holds what value we're aiming for
-#target {var.internal("target tier")}
-#target.get {var.get(int, {target})}
-#target.set(value) {var.set(int, {target}, {value})}
-
-; A data string that holds each value in the offshore market
-#offer {var.internal("offer tiers")}
-#offer.get {var.get(string, {offer})}
-#offer.set(value) {var.set(string, {offer}, {value})}
 
 ; status of the script,
 ; also closes the hiding block
@@ -159,7 +151,7 @@
 ; 
 ; We add back the 2 levels on the outside.
 #up_tiers(in_tier) floor(\
-  {budget.get} / 1e5 / (18.0 ^ ({in_tier}))\
+  {budget} / 1e5 / (18.0 ^ ({in_tier}))\
 ) // 3.0 + 2.0
 
 
